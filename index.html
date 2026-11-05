@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>학기말 성취도별 분포 비율 예측 · 안양여고 평가관리부</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231e3a5f'/><rect x='7' y='17' width='4' height='9' fill='%23ffffff'/><rect x='14' y='12' width='4' height='14' fill='%23ffffff'/><rect x='21' y='7' width='4' height='19' fill='%23ffffff'/></svg>">
+<style>
+  :root {
+    --bg: #f1f4f7; --ink: #0f1d2e; --muted: #5b6b80;
+    --line: #dde3eb; --accent: #1e3a5f; --accent-soft: #eaf0f7;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    display: flex; flex-direction: column;
+    background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  }
+  header {
+    flex-shrink: 0;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 12px 20px 0;
+    background: #fff;
+    border-bottom: 2px solid var(--ink);
+  }
+  .brand { display: flex; align-items: center; gap: 10px; padding-bottom: 12px; min-width: 0; }
+  .brand-icon {
+    width: 36px; height: 36px; border-radius: 8px; flex-shrink: 0;
+    background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .brand-icon svg { width: 20px; height: 20px; }
+  .brand h1 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+  .brand p { margin: 1px 0 0; font-size: 12px; color: var(--muted); }
+  nav { display: flex; gap: 4px; margin-left: auto; align-self: flex-end; }
+  nav button {
+    font: inherit; font-size: 14px; font-weight: 600;
+    padding: 9px 18px; margin-bottom: -2px;
+    border: 1px solid var(--line); border-bottom: 2px solid var(--ink);
+    border-radius: 8px 8px 0 0;
+    background: var(--accent-soft); color: var(--muted);
+    cursor: pointer;
+  }
+  nav button:hover { color: var(--accent); }
+  nav button[aria-selected="true"] {
+    background: var(--bg); color: var(--accent);
+    border-color: var(--ink); border-bottom-color: var(--bg);
+  }
+  main { flex: 1; position: relative; min-height: 0; }
+  iframe {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%; border: 0;
+    display: none; background: var(--bg);
+  }
+  iframe.active { display: block; }
+  @media (max-width: 640px) {
+    header { padding: 10px 12px 0; }
+    nav { margin-left: 0; width: 100%; }
+    nav button { flex: 1; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <div class="brand-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="13" width="4" height="8" rx="0.8" fill="#fff" opacity="0.85"/><rect x="10" y="9" width="4" height="12" rx="0.8" fill="#fff" opacity="0.95"/><rect x="17" y="5" width="4" height="16" rx="0.8" fill="#fff"/></svg>
+    </div>
+    <div>
+      <h1>학기말 성취도별 분포 비율 예측</h1>
+      <p>안양여고 평가관리부 · 2026</p>
+    </div>
+  </div>
+  <nav role="tablist">
+    <button role="tab" data-tab="g1">1학년</button>
+    <button role="tab" data-tab="g23">2·3학년</button>
+  </nav>
+</header>
+<main>
+  <iframe id="frame-g1"  data-src="ayhs-g1.html"  title="1학년 분포 비율 예측"></iframe>
+  <iframe id="frame-g23" data-src="ayhs-g23.html" title="2·3학년 분포 비율 예측"></iframe>
+</main>
+<script>
+  // 탭 전환 시 iframe을 다시 불러오지 않음 → 업로드한 파일·입력값 유지
+  const TABS = ['g1', 'g23'];
+  function show(tab) {
+    if (!TABS.includes(tab)) tab = 'g1';
+    TABS.forEach(t => {
+      const f = document.getElementById('frame-' + t);
+      const on = t === tab;
+      if (on && !f.src) f.src = f.dataset.src;   // 처음 열 때만 로드
+      f.classList.toggle('active', on);
+      document.querySelector(`[data-tab="${t}"]`).setAttribute('aria-selected', on);
+    });
+    if (location.hash !== '#' + tab) history.replaceState(null, '', '#' + tab);
+  }
+  document.querySelectorAll('nav button').forEach(b =>
+    b.addEventListener('click', () => show(b.dataset.tab)));
+  window.addEventListener('hashchange', () => show(location.hash.slice(1)));
+  show(location.hash.slice(1));
+</script>
+</body>
+</html>

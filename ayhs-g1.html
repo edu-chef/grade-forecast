@@ -1,0 +1,2043 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>학기말 성취도별 분포 비율 예측(1학년) · 안양여고 평가관리부</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231e3a5f'/><rect x='7' y='17' width='4' height='9' fill='%23ffffff'/><rect x='14' y='12' width='4' height='14' fill='%23ffffff'/><rect x='21' y='7' width='4' height='19' fill='%23ffffff'/></svg>">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #f1f4f7;
+    --panel: #ffffff;
+    --ink: #0f1d2e;
+    --muted: #5b6b80;
+    --line: #dde3eb;
+    --line-soft: #eef1f5;
+    --accent: #1e3a5f;
+    --accent-soft: #eaf0f7;
+    --warn: #b8722a;
+    --warn-soft: #fdf3e3;
+    --danger: #c0392b;
+    --highlight: #fff8e1;
+    --highlight-border: #e0a800;
+    --highlight-ink: #6b4e10;
+    --result-bg: linear-gradient(135deg, #1e3a5f 0%, #2c5282 60%, #3a6ea8 100%);
+    --result-bg-solid: #1e3a5f;
+    --result-ink: #ffffff;
+    --grade-a: #1e6091;
+    --grade-b: #4a8bc4;
+    --grade-c: #d4a017;
+    --grade-d: #e67e22;
+    --grade-e: #c0392b;
+    --grade-f: #5a6c80;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .container {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  header {
+    margin-bottom: 18px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  header .brand-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 2px 6px rgba(30,58,95,0.25);
+  }
+  header .brand-icon svg { width: 26px; height: 26px; }
+  header .title-block { flex: 1; min-width: 0; }
+  header h1 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+  header p {
+    margin: 4px 0 0;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  header .org-tag {
+    text-align: right;
+    flex-shrink: 0;
+    padding-left: 12px;
+    border-left: 1px solid var(--line);
+  }
+  header .org-tag .org-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: -0.2px;
+  }
+  header .org-tag .org-year {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+    letter-spacing: 1px;
+  }
+  @media (max-width: 700px) {
+    header { flex-wrap: wrap; }
+    header .org-tag { width: 100%; text-align: left; padding-left: 0; border-left: none; padding-top: 8px; border-top: 1px solid var(--line); margin-top: 4px; }
+  }
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    gap: 16px;
+  }
+  @media (max-width: 1100px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+  .col { display: flex; flex-direction: column; gap: 14px; }
+  .top-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    gap: 14px;
+  }
+  @media (max-width: 800px) {
+    .top-row { grid-template-columns: 1fr; }
+  }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 14px 16px;
+    box-shadow: 0 1px 2px rgba(15,29,46,0.04);
+  }
+  .panel h2 {
+    margin: 0 0 12px;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.2px;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .panel h2 .num {
+    background: var(--ink);
+    color: #fff;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .panel h2 .keyboard-hint {
+    margin-left: auto;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--muted);
+    letter-spacing: 0;
+    background: var(--line-soft);
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--line);
+  }
+  .panel.highlight {
+    border: 2px solid var(--highlight-border);
+    background: var(--highlight);
+  }
+  .panel.highlight h2 { color: var(--highlight-ink); }
+  .panel.highlight h2 .num { background: var(--highlight-ink); }
+  .panel.highlight h2 .keyboard-hint {
+    background: rgba(255,255,255,0.6);
+    border-color: var(--highlight-border);
+    color: var(--highlight-ink);
+  }
+  .panel.result {
+    background: var(--result-bg);
+    color: var(--result-ink);
+    border: none;
+    box-shadow: 0 4px 14px rgba(30, 58, 95, 0.3);
+  }
+  .panel.result h2 { color: rgba(255,255,255,0.95); }
+  .panel.result h2 .num { background: #fff; color: var(--result-bg-solid); }
+
+  /* ===== 파일 업로드 ===== */
+  .upload-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .upload-box {
+    border: 1.5px dashed var(--line);
+    border-radius: 6px;
+    padding: 12px;
+    background: #fafaf7;
+    transition: border-color 0.15s;
+  }
+  .upload-box:hover { border-color: var(--accent); }
+  .upload-box.dragover { border-color: var(--accent); background: var(--accent-soft); }
+  .upload-box h3 {
+    margin: 0 0 6px;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .upload-box .hint {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .upload-box .nice-path {
+    font-size: 10.5px;
+    color: #5a6c80;
+    background: #f4f7fa;
+    border: 1px solid #dde3eb;
+    border-radius: 4px;
+    padding: 6px 8px;
+    margin-bottom: 8px;
+    line-height: 1.6;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+  }
+  .upload-box .nice-path .nice-label {
+    display: inline-block;
+    font-size: 9.5px;
+    font-weight: 700;
+    color: #fff;
+    background: var(--accent);
+    padding: 1px 5px;
+    border-radius: 3px;
+    margin-right: 5px;
+    vertical-align: middle;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+  .upload-box .nice-path .nice-step {
+    color: var(--ink);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .upload-box .nice-path .nice-arrow {
+    color: #a8b3c0;
+    margin: 0 3px;
+    font-size: 10px;
+  }
+  .upload-btn {
+    display: inline-block;
+    padding: 6px 12px;
+    background: var(--ink);
+    color: #fff;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    border: none;
+  }
+  .upload-btn:hover { background: var(--accent); }
+  .file-list {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .file-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 8px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    font-size: 12px;
+  }
+  .file-item .info {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .file-item .info > div:first-child {
+    white-space: normal;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+    line-height: 1.35;
+  }
+  .file-item .meta {
+    color: var(--muted);
+    font-size: 11px;
+    margin-top: 2px;
+  }
+  .file-item .del {
+    background: none;
+    border: none;
+    color: var(--danger);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px 6px;
+    border-radius: 3px;
+  }
+  .file-item .del:hover { background: #fce8e8; }
+  .file-item .cls-badge {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 700;
+    font-size: 11px;
+    padding: 1px 6px;
+    border-radius: 3px;
+    margin-right: 4px;
+    vertical-align: middle;
+  }
+
+  /* ===== 스프레드시트 그리드 ===== */
+  .sheet {
+    border-collapse: collapse;
+    width: 100%;
+    font-variant-numeric: tabular-nums;
+  }
+  .sheet th, .sheet td {
+    border: 1px solid var(--line);
+    padding: 0;
+    text-align: center;
+    height: 30px;
+    font-size: 13px;
+  }
+  .sheet th {
+    background: var(--line-soft);
+    font-weight: 600;
+    color: var(--ink);
+    font-size: 12px;
+    padding: 6px 8px;
+  }
+  .sheet td.label {
+    background: var(--line-soft);
+    font-weight: 600;
+    padding: 0 10px;
+    text-align: left;
+    font-size: 13px;
+    white-space: nowrap;
+    color: var(--ink);
+  }
+  .sheet td.editable {
+    background: #ffffff;
+    cursor: cell;
+    position: relative;
+  }
+  .sheet td.editable:hover { background: #f5fbfc; }
+  .sheet td.editable.selected {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+    background: #ffffff;
+  }
+  .sheet td.computed {
+    background: var(--line-soft);
+    color: var(--ink);
+    font-weight: 700;
+    font-size: 15px;
+  }
+  .sheet td.invalid { background: #fde8e8 !important; color: var(--danger); }
+  .sheet input.cell-input {
+    width: 100%;
+    height: 100%;
+    border: none;
+    outline: none;
+    background: transparent;
+    text-align: center;
+    font: inherit;
+    padding: 0 4px;
+    color: inherit;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ===== 강조된 [4]번 박스 ===== */
+  .key-input-note {
+    font-size: 12px;
+    color: #6b4f10;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .key-input-note::before { content: "▸"; }
+  .sheet.key td.editable {
+    height: 42px;
+    font-size: 18px;
+    font-weight: 700;
+    background: #ffffff;
+    color: var(--highlight-ink);
+  }
+  .sheet.key td.editable:hover { background: #fffdf2; }
+  .nudge-row {
+    display: flex;
+    gap: 4px;
+    margin-top: 6px;
+    justify-content: center;
+  }
+  .nudge {
+    background: #fff;
+    border: 1px solid var(--highlight-border);
+    color: #6b4f10;
+    padding: 2px 6px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .nudge:hover { background: var(--highlight-border); color: #fff; }
+
+  /* ===== 결과 카드 [6] ===== */
+  .result-cards {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .grade-card {
+    background: #ffffff;
+    border: 1px solid rgba(255,255,255,0.4);
+    border-radius: 10px;
+    padding: 14px 6px;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  }
+  .grade-card .grade {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: #1e3a5f;
+    margin-bottom: 8px;
+  }
+  .grade-card .pct {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.8px;
+    transition: color 0.2s;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    color: #1e3a5f;
+  }
+  .grade-card .count {
+    font-size: 12px;
+    color: #5a6c80;
+    margin-top: 6px;
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+  }
+  .grade-card.a { border-top: 3px solid var(--grade-a); }
+  .grade-card.b { border-top: 3px solid var(--grade-b); }
+  .grade-card.c { border-top: 3px solid var(--grade-c); }
+  .grade-card.d { border-top: 3px solid var(--grade-d); }
+  .grade-card.e { border-top: 3px solid var(--grade-e); }
+  .grade-card.f { border-top: 3px solid var(--grade-f); }
+
+  .stack-bar {
+    display: flex;
+    height: 28px;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+  .stack-bar .seg {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    transition: flex 0.3s ease, opacity 0.2s;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .stack-bar .seg.a { background: var(--grade-a); }
+  .stack-bar .seg.b { background: var(--grade-b); }
+  .stack-bar .seg.c { background: var(--grade-c); }
+  .stack-bar .seg.d { background: var(--grade-d); }
+  .stack-bar .seg.e { background: var(--grade-e); }
+  .stack-bar .seg.f { background: var(--grade-f); }
+
+  .total-line {
+    margin-top: 10px;
+    font-size: 13px;
+    color: rgba(255,255,255,0.92);
+    text-align: right;
+    font-weight: 500;
+  }
+
+  /* ===== 비율 입력 [2] ===== */
+  .ratio-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .ratio-pa {
+    flex: 1;
+    min-width: 120px;
+    padding: 10px 12px;
+    background: var(--accent-soft);
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    font-size: 13px;
+    color: var(--ink);
+    text-align: center;
+  }
+  .ratio-pa .pa-label { font-size: 11px; color: var(--muted); display: block; margin-bottom: 2px; }
+  .ratio-pa strong { color: var(--accent); font-weight: 700; font-size: 18px; font-variant-numeric: tabular-nums; }
+  .ratio-pa.warn { background: #fde8e8; border-color: var(--danger); }
+  .ratio-pa.warn strong { color: var(--danger); }
+
+  /* ===== 히스토그램 [7] ===== */
+  .hist-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+    font-size: 12px;
+  }
+  .hist-controls input[type=range] { flex: 1; }
+  .hist-controls .width-val {
+    background: var(--accent);
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-weight: 700;
+    min-width: 26px;
+    text-align: center;
+  }
+  .chart-wrap {
+    position: relative;
+    height: 240px;
+  }
+  .hist-stats {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+  .hist-stats .stat-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--accent-soft);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-size: 12px;
+  }
+  .hist-stats .stat-k { color: var(--muted); }
+  .hist-stats .stat-v { font-weight: 700; color: var(--accent); }
+
+  /* ===== 학생별 상세표 [8] ===== */
+  .detail-wrap {
+    max-height: 360px;
+    overflow: auto;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+  }
+  /* [8] 패널을 우측 컬럼의 남는 높이만큼 늘려서 좌측 [6]번 근처까지 내려오게 */
+  .detail-panel {
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .detail-panel .detail-wrap {
+    flex: 1 1 auto;
+    min-height: 260px;
+    max-height: none;
+  }
+  @media (max-width: 1100px) {
+    .detail-panel { flex: 0 0 auto; }
+    .detail-panel .detail-wrap { max-height: 520px; }
+  }
+  table.detail {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+  table.detail th, table.detail td {
+    border: 1px solid var(--line);
+    padding: 4px 6px;
+    text-align: center;
+    min-width: 44px;
+  }
+  table.detail thead th {
+    position: sticky;
+    top: 0;
+    background: var(--line-soft);
+    color: var(--ink);
+    font-weight: 600;
+    z-index: 2;
+  }
+  table.detail tbody th {
+    position: sticky;
+    left: 0;
+    background: var(--line-soft);
+    color: var(--ink);
+    font-weight: 600;
+    z-index: 1;
+  }
+  table.detail td.a { background: #5ec98f; font-weight: 700; }
+  table.detail td.b { background: #d8f0e2; }
+  table.detail td.c { background: #fdf2d4; }
+  table.detail td.d { background: #fde2cf; }
+  table.detail td.e { background: #f08a8a; font-weight: 700; }
+  table.detail td.f { background: #b59bdf; font-weight: 700; }
+
+  .empty-msg {
+    color: var(--muted);
+    font-size: 12px;
+    padding: 16px;
+    text-align: center;
+    font-style: italic;
+  }
+
+  /* ===== 사용 팁 박스 ===== */
+  .tip-box {
+    margin-top: 12px;
+    padding: 12px 14px;
+    background: var(--accent-soft);
+    border-left: 3px solid var(--accent);
+    border-radius: 4px;
+    font-size: 12.5px;
+  }
+  .tip-title {
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 6px;
+    font-size: 12.5px;
+  }
+  .tip-list {
+    margin: 0;
+    padding-left: 18px;
+    color: var(--ink);
+    line-height: 1.7;
+  }
+  .tip-list li { margin-bottom: 2px; }
+  .tip-list strong { color: var(--accent); font-weight: 700; }
+
+  /* ===== 푸터 보안 안내 ===== */
+  .security-footer {
+    margin-top: 0;
+    padding: 12px 14px;
+    background: #fdf5f5;
+    border: 1px solid #e8c8c8;
+    border-left: 4px solid var(--danger);
+    border-radius: 6px;
+    font-size: 12px;
+    color: #5c2828;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .security-footer .lock-icon {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    margin-top: 1px;
+    color: var(--danger);
+  }
+  .security-footer .sec-content { flex: 1; }
+  .security-footer .sec-title {
+    font-weight: 700;
+    color: var(--danger);
+    margin-bottom: 4px;
+    letter-spacing: -0.2px;
+    font-size: 12.5px;
+  }
+  .security-footer .sec-body {
+    line-height: 1.55;
+    color: #5c2828;
+  }
+  .security-footer .sec-body strong { color: var(--danger); font-weight: 700; }
+  .warning-msg {
+    background: var(--warn-soft);
+    color: var(--warn);
+    border: 1px solid var(--warn);
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-size: 12px;
+    margin-top: 8px;
+  }
+  .small-label {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  /* ===== 상단 도구막대 (저장/다운로드) ===== */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+    padding: 10px 14px;
+    background: var(--accent-soft);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+  }
+  .toolbar .save-status {
+    font-size: 12.5px;
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .toolbar-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .tool-btn {
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 7px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: #fff;
+    transition: filter .12s, background .12s;
+  }
+  .tool-btn:hover { filter: brightness(1.08); }
+  .tool-btn.ghost { background: #fff; color: var(--accent); }
+  .tool-btn.ghost:hover { background: var(--accent-soft); filter: none; }
+  /* ===== [8] 표 색상 범례 ===== */
+  .grade-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    margin: 2px 0 10px;
+  }
+  .grade-legend .lg-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .grade-legend .lg-swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    border: 1px solid rgba(0,0,0,0.10);
+    flex-shrink: 0;
+  }
+</style>
+<script>if (window.self !== window.top) document.documentElement.classList.add('embedded');</script>
+<style>
+  /* index.html의 iframe 안에서 열릴 때: 중복 헤더 숨기고 여백 축소 */
+  html.embedded header { display: none; }
+  html.embedded .container { padding: 12px 16px 16px; max-width: none; }
+  html.embedded .toolbar { margin-bottom: 12px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="brand-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="3" y="13" width="4" height="8" rx="0.8" fill="#ffffff" opacity="0.85"/>
+        <rect x="10" y="9" width="4" height="12" rx="0.8" fill="#ffffff" opacity="0.95"/>
+        <rect x="17" y="5" width="4" height="16" rx="0.8" fill="#ffffff"/>
+        <path d="M4 7 L9 4 L14 6 L20 2" stroke="#7eb8e8" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <circle cx="20" cy="2" r="1.3" fill="#7eb8e8"/>
+      </svg>
+    </div>
+    <div class="title-block">
+      <h1>학기말 성취도별 분포 비율 예측(1학년)</h1>
+      <p>정기시험·수행평가 데이터를 업로드하고, 2차 정기시험 분할점수를 조정하며 학기말 성취도 분포를 예측합니다.</p>
+    </div>
+    <div class="org-tag">
+      <div class="org-name">안양여고 평가관리부</div>
+      <div class="org-year">2026</div>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="save-status" id="saveStatus">💾 입력값이 이 브라우저에 자동 저장됩니다.</div>
+    <div class="toolbar-actions">
+      <button class="tool-btn" id="downloadBtn">📥 결과 엑셀로 저장</button>
+      <button class="tool-btn ghost" id="resetBtn">↺ 입력값 기본값으로</button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <!-- ===== 좌측 컬럼 ===== -->
+    <div class="col">
+
+      <!-- [1] + [2] 가로 배치 -->
+      <div class="top-row">
+        <!-- [1] 파일 업로드 -->
+        <div class="panel">
+          <h2><span class="num">1</span>파일 업로드</h2>
+          <div class="upload-grid">
+            <div class="upload-box" id="examDrop">
+              <h3>📘 정기시험(중간)</h3>
+              <div class="nice-path">
+                <span class="nice-label">NEIS</span>
+                <span class="nice-step">지필평가조회</span><span class="nice-arrow">›</span><span class="nice-step">교과목별일람표조회</span><span class="nice-arrow">›</span><span class="nice-step">전체학급</span><span class="nice-arrow">›</span><span class="nice-step">XLS data 저장</span>
+              </div>
+              <label class="upload-btn">파일 선택
+                <input type="file" id="examInput" accept=".xlsx,.xls" style="display:none">
+              </label>
+              <div class="file-list" id="examList"></div>
+            </div>
+            <div class="upload-box" id="paDrop">
+              <h3>📗 수행평가</h3>
+              <div class="nice-path">
+                <span class="nice-label">NEIS</span>
+                <span class="nice-step">수행평가조회</span><span class="nice-arrow">›</span><span class="nice-step">강의실별일람표조회</span><span class="nice-arrow">›</span><span class="nice-step">전체영역</span><span class="nice-arrow">›</span><span class="nice-step">XLS data 저장</span>
+                <div style="margin-top:4px; color:var(--muted); font-size:10px;">반별로 1개씩 · 1반~8반 모두 업로드</div>
+              </div>
+              <label class="upload-btn">파일 추가
+                <input type="file" id="paInput" accept=".xlsx,.xls" multiple style="display:none">
+              </label>
+              <div class="file-list" id="paList"></div>
+            </div>
+          </div>
+          <div id="uploadWarn"></div>
+        </div>
+
+        <!-- [2] 반영 비율 -->
+        <div class="panel">
+          <h2><span class="num">2</span>반영 비율<span class="keyboard-hint">⌨ 키보드로 값 입력</span></h2>
+          <div class="ratio-row">
+            <table class="sheet" id="ratioSheet" style="width:auto">
+              <thead>
+                <tr><th></th><th style="width:90px">반영 비율</th></tr>
+              </thead>
+              <tbody>
+                <tr><td class="label">1차 정기시험</td><td class="editable" data-grid="ratio" data-r="0" data-c="0">0.25</td></tr>
+                <tr><td class="label">2차 정기시험</td><td class="editable" data-grid="ratio" data-r="1" data-c="0">0.25</td></tr>
+              </tbody>
+            </table>
+            <div class="ratio-pa" id="paRatioDisplay">
+              <span class="pa-label">수행평가 비율</span>
+              <strong>0.50</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- [3] 분할점수 입력 -->
+      <div class="panel">
+        <h2><span class="num">3</span>1차 정기시험 · 수행평가 성취수준별 추정분할점수<span class="keyboard-hint">⌨ 키보드 입력 · 엑셀에서 복사·붙여넣기 가능</span></h2>
+        <table class="sheet" id="cutoffSheet">
+          <thead>
+            <tr><th></th><th>A/B</th><th>B/C</th><th>C/D</th><th>D/E</th><th>E/미도달</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="label">1차 정기시험</td>
+              <td class="editable" data-grid="exam" data-r="0" data-c="0">74.28</td>
+              <td class="editable" data-grid="exam" data-r="0" data-c="1">51.35</td>
+              <td class="editable" data-grid="exam" data-r="0" data-c="2">40.1</td>
+              <td class="editable" data-grid="exam" data-r="0" data-c="3">27.97</td>
+              <td class="editable" data-grid="exam" data-r="0" data-c="4">15.03</td>
+            </tr>
+            <tr>
+              <td class="label">수행평가</td>
+              <td class="editable" data-grid="pa" data-r="0" data-c="0">45</td>
+              <td class="editable" data-grid="pa" data-r="0" data-c="1">40</td>
+              <td class="editable" data-grid="pa" data-r="0" data-c="2">35</td>
+              <td class="editable" data-grid="pa" data-r="0" data-c="3">30</td>
+              <td class="editable" data-grid="pa" data-r="0" data-c="4">20</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- [4] 강조된 2차 정기시험 분할점수 -->
+      <div class="panel highlight">
+        <h2><span class="num">4</span>2차 정기시험 추정 분할점수 ★ 핵심 변수<span class="keyboard-hint">⌨ 키보드 입력</span></h2>
+        <div class="key-input-note">이 값을 조정하며 아래 [6]번 분포 비율의 변화를 관찰하세요</div>
+        <table class="sheet key" id="cutoff2Sheet">
+          <thead>
+            <tr><th>A/B</th><th>B/C</th><th>C/D</th><th>D/E</th><th>E/미도달</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="editable" data-grid="exam2" data-r="0" data-c="0">75</td>
+              <td class="editable" data-grid="exam2" data-r="0" data-c="1">64</td>
+              <td class="editable" data-grid="exam2" data-r="0" data-c="2">52</td>
+              <td class="editable" data-grid="exam2" data-r="0" data-c="3">30</td>
+              <td class="editable" data-grid="exam2" data-r="0" data-c="4">15</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="nudge-row">
+          <button class="nudge" data-nudge="-5">−5 전체</button>
+          <button class="nudge" data-nudge="-1">−1 전체</button>
+          <button class="nudge" data-nudge="1">+1 전체</button>
+          <button class="nudge" data-nudge="5">+5 전체</button>
+        </div>
+      </div>
+
+      <!-- [5] 학기말 추정 분할점수 (자동) -->
+      <div class="panel">
+        <h2><span class="num">5</span>학기말 추정 분할점수 (자동산출)</h2>
+        <table class="sheet">
+          <thead>
+            <tr><th>A/B</th><th>B/C</th><th>C/D</th><th>D/E</th><th>E/미도달</th></tr>
+          </thead>
+          <tbody>
+            <tr id="finalCutoffRow">
+              <td class="computed" id="fc0">—</td>
+              <td class="computed" id="fc1">—</td>
+              <td class="computed" id="fc2">—</td>
+              <td class="computed" id="fc3">—</td>
+              <td class="computed" id="fc4">—</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="tip-box">
+          <div class="tip-title">📌 2차 정기시험 추정 분할점수 조정 가이드</div>
+          <ul class="tip-list">
+            <li>2차 정기시험이 1차 정기시험보다 <strong>어려울 경우</strong> → 2차 정기시험 추정 분할점수를 좀 더 <strong>낮추기</strong></li>
+            <li>2차 정기시험이 1차 정기시험보다 <strong>쉬울 경우</strong> → 2차 정기시험 추정 분할점수를 좀 더 <strong>올리기</strong></li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- [6] 강조된 결과 -->
+      <div class="panel result">
+        <h2><span class="num">6</span>최종 예상 성취도별 분포 비율</h2>
+        <div class="result-cards" id="resultCards">
+          <div class="grade-card a"><div class="grade">A</div><div class="pct" id="pctA">—</div><div class="count" id="cntA">0명</div></div>
+          <div class="grade-card b"><div class="grade">B</div><div class="pct" id="pctB">—</div><div class="count" id="cntB">0명</div></div>
+          <div class="grade-card c"><div class="grade">C</div><div class="pct" id="pctC">—</div><div class="count" id="cntC">0명</div></div>
+          <div class="grade-card d"><div class="grade">D</div><div class="pct" id="pctD">—</div><div class="count" id="cntD">0명</div></div>
+          <div class="grade-card e"><div class="grade">E</div><div class="pct" id="pctE">—</div><div class="count" id="cntE">0명</div></div>
+          <div class="grade-card f"><div class="grade">미도달</div><div class="pct" id="pctF">—</div><div class="count" id="cntF">0명</div></div>
+        </div>
+        <div class="stack-bar" id="stackBar">
+          <div class="seg a" style="flex:0"></div>
+          <div class="seg b" style="flex:0"></div>
+          <div class="seg c" style="flex:0"></div>
+          <div class="seg d" style="flex:0"></div>
+          <div class="seg e" style="flex:0"></div>
+          <div class="seg f" style="flex:0"></div>
+        </div>
+        <div class="total-line" id="totalLine">총 인원: 0명</div>
+      </div>
+    </div>
+
+    <!-- ===== 우측 컬럼 ===== -->
+    <div class="col">
+
+      <!-- [7] 히스토그램 -->
+      <div class="panel">
+        <h2><span class="num">7</span>1차 정기시험 점수 분포 히스토그램</h2>
+        <div class="hist-controls">
+          <span>계급 폭</span>
+          <input type="range" id="binSlider" min="1" max="10" step="1" value="5">
+          <span class="width-val" id="binVal">5</span>
+        </div>
+        <div id="histStats" class="hist-stats" style="display:none;">
+          <span class="stat-item"><span class="stat-k">평균</span><span class="stat-v" id="statMean">-</span></span>
+          <span class="stat-item"><span class="stat-k">표준편차</span><span class="stat-v" id="statSd">-</span></span>
+          <span class="stat-item"><span class="stat-k">응시</span><span class="stat-v" id="statN">-</span></span>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="histChart"></canvas>
+        </div>
+        <div id="histEmpty" class="empty-msg" style="display:none;">정기시험 파일을 업로드하면 표시됩니다.</div>
+      </div>
+
+      <!-- [8] 학기말 추정 점수 표 -->
+      <div class="panel detail-panel">
+        <h2><span class="num">8</span>학생별 학기말 추정 점수</h2>
+        <div class="small-label">색상은 예측된 성취도 등급을 의미합니다. (1·2차 동일 난이도 가정)</div>
+        <div class="grade-legend">
+          <span class="lg-item"><span class="lg-swatch" style="background:#5ec98f"></span>A</span>
+          <span class="lg-item"><span class="lg-swatch" style="background:#d8f0e2"></span>B</span>
+          <span class="lg-item"><span class="lg-swatch" style="background:#fdf2d4"></span>C</span>
+          <span class="lg-item"><span class="lg-swatch" style="background:#fde2cf"></span>D</span>
+          <span class="lg-item"><span class="lg-swatch" style="background:#f08a8a"></span>E</span>
+          <span class="lg-item"><span class="lg-swatch" style="background:#b59bdf"></span>미도달</span>
+        </div>
+        <div class="detail-wrap" id="detailWrap">
+          <div class="empty-msg">파일을 업로드하면 표시됩니다.</div>
+        </div>
+      </div>
+
+      <!-- ===== 보안 안내 ===== -->
+      <div class="security-footer">
+        <svg class="lock-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="4" y="10" width="16" height="11" rx="2" stroke="currentColor" stroke-width="2"/>
+          <path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="12" cy="15" r="1.5" fill="currentColor"/>
+        </svg>
+        <div class="sec-content">
+          <div class="sec-title">보안 안내 · 외부 유출 금지</div>
+          <div class="sec-body">
+            본 웹앱은 <strong>안양여고 평가관리부 내부용</strong>으로만 운영되며, 모든 파일 처리는 사용자의 브라우저 내에서만 이루어지므로 <strong>개인정보가 외부 서버로 전송되거나 유출되지 않습니다</strong>.
+            다만 화면에 표시되는 학생 점수 및 성적 분포 자료는 민감한 개인정보에 해당하므로, <strong>화면 캡처·파일 공유·외부 반출을 엄격히 금지</strong>합니다. 사용 후에는 반드시 브라우저 탭을 닫아 주시기 바랍니다.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ========================================
+// 상태(state)
+// ========================================
+const state = {
+  examFile: null,              // {name, scores: {반: {번호: 점수}}, classes: [], maxStudent}
+  paFiles: [],                 // [{name, area, scores: {...}}]
+  ratio: { r1: 0.25, r2: 0.25 },
+  cutoff_exam1: [74.28, 51.35, 40.1, 27.97, 15.03],
+  cutoff_pa:    [45,    40,    35,   30,    20],
+  cutoff_exam2: [75,    64,    52,   30,    15],
+  binWidth: 5,
+};
+
+// 기본값 보존(초기화용) — loadSettings가 state를 바꾸기 전에 캡처
+const DEFAULTS = {
+  ratio: { r1: state.ratio.r1, r2: state.ratio.r2 },
+  cutoff_exam1: state.cutoff_exam1.slice(),
+  cutoff_pa: state.cutoff_pa.slice(),
+  cutoff_exam2: state.cutoff_exam2.slice(),
+  binWidth: state.binWidth,
+};
+const STORAGE_KEY = 'ayg_achv_pred_g1';
+let booted = false;
+let lastResult = null;
+
+let histChart = null;
+
+// ========================================
+// 엑셀 파싱
+// ========================================
+function readWorkbook(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const wb = XLSX.read(data, { type: 'array' });
+        const sheet = wb.Sheets[wb.SheetNames[0]];
+        const aoa = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null, raw: true });
+        resolve(aoa);
+      } catch (err) { reject(err); }
+    };
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+// 헤더 행 찾기: "반번호" 또는 "반\n번호" 셀이 있는 행
+function findHeaderRow(aoa) {
+  for (let i = 0; i < Math.min(aoa.length, 20); i++) {
+    const row = aoa[i] || [];
+    for (let j = 0; j < row.length; j++) {
+      const v = row[j];
+      if (v == null) continue;
+      const s = String(v).replace(/\s+/g, '');
+      if (s === '반번호') return { row: i, col: j };
+    }
+  }
+  return null;
+}
+
+// 8행에서 "영역" 텍스트 추출 (수행평가용)
+function extractAreaName(aoa) {
+  // 8행 인덱스 = 7. 그 주변 행도 훑어 "영   역 :" 또는 "영역 :"
+  for (let i = 0; i < Math.min(aoa.length, 12); i++) {
+    const row = aoa[i] || [];
+    for (const v of row) {
+      if (v == null) continue;
+      const s = String(v).replace(/\s+/g, '');
+      const m = s.match(/영역[:：]([^영역]+?)(?:영역만점|만점|$)/);
+      if (m) return m[1].trim().substring(0, 40);
+    }
+  }
+  return null;
+}
+
+// 파일 파싱: {scores: {반번호: {학생번호: 점수}}, classes, maxStudent, areaName}
+function parseScoreFile(aoa, opts={}) {
+  const hdr = findHeaderRow(aoa);
+  if (!hdr) throw new Error('헤더(반번호)를 찾을 수 없습니다.');
+
+  const headerRow = aoa[hdr.row];
+  // 헤더에서 반 번호들 추출 (반번호 셀 이후의 숫자 셀들)
+  const classCols = []; // [{class: 1, col: 2}, ...]
+  for (let c = hdr.col + 1; c < headerRow.length; c++) {
+    const v = headerRow[c];
+    if (v == null || v === '') continue;
+    const n = Number(v);
+    if (!Number.isNaN(n) && n >= 1 && n <= 30) {
+      classCols.push({ cls: n, col: c });
+    }
+  }
+  if (classCols.length === 0) throw new Error('반 번호 컬럼을 찾을 수 없습니다.');
+
+  // 데이터 읽기: 헤더 다음 행부터, "응시생수/총점/평균" 또는 비숫자 만나면 중단
+  const scores = {}; // {cls: {studNo: score}}
+  classCols.forEach(({cls}) => { scores[cls] = {}; });
+  let maxStudent = 0;
+
+  for (let r = hdr.row + 1; r < aoa.length; r++) {
+    const row = aoa[r] || [];
+    const firstVal = row[hdr.col];
+    if (firstVal == null || firstVal === '') {
+      // 빈 행 - 일단 다음으로 (중간에 빈 행이 있을 수도 있음)
+      continue;
+    }
+    // 요약 행 감지
+    const fs = String(firstVal).replace(/\s+/g, '');
+    if (/^(응시생수|총점|평균|합계|성취기준)/.test(fs)) break;
+
+    const studNo = Number(firstVal);
+    if (Number.isNaN(studNo)) continue;
+    if (studNo > maxStudent) maxStudent = studNo;
+
+    classCols.forEach(({cls, col}) => {
+      const v = row[col];
+      if (v == null || v === '') return; // 결시/빈칸 → 미응시(저장 안함)
+      const n = Number(v);
+      if (Number.isNaN(n)) return; // "전출" 등 → 미응시
+      scores[cls][studNo] = n;
+    });
+  }
+
+  return {
+    scores,
+    classes: classCols.map(c => c.cls).sort((a,b)=>a-b),
+    maxStudent,
+    areaName: opts.findArea ? extractAreaName(aoa) : null,
+  };
+}
+
+// ========================================
+// 수행평가 전용 파서 (강의실별 일람표 형식)
+// A열: "반/번호" (예: "4/1"), G열(또는 "합 계" 열): 합산 점수
+// 한 파일 = 한 반
+// ========================================
+function parsePerformanceFile(aoa) {
+  // 헤더 행 찾기: "반/번호" 또는 "반 / 번호" 형태
+  let hdrRow = -1;
+  let noColIdx = -1;
+  let sumColIdx = -1;
+  let nameColIdx = -1;
+
+  for (let i = 0; i < Math.min(aoa.length, 20); i++) {
+    const row = aoa[i] || [];
+    for (let j = 0; j < row.length; j++) {
+      const v = row[j];
+      if (v == null) continue;
+      const s = String(v).replace(/\s+/g, '');
+      if (s === '반/번호' || s === '반번호' || s === '학반/번호') {
+        hdrRow = i;
+        noColIdx = j;
+        // 같은 행에서 "합계" 또는 "합 계" 찾기
+        for (let k = j + 1; k < row.length; k++) {
+          const vk = row[k];
+          if (vk == null) continue;
+          const sk = String(vk).replace(/\s+/g, '');
+          if (sk === '합계' || sk === '총점' || sk === '계') { sumColIdx = k; }
+          if (sk === '성명' || sk === '이름') { nameColIdx = k; }
+        }
+        break;
+      }
+    }
+    if (hdrRow >= 0) break;
+  }
+
+  if (hdrRow < 0) {
+    throw new Error('수행평가 파일에서 "반/번호" 헤더를 찾을 수 없습니다.');
+  }
+  if (sumColIdx < 0) {
+    throw new Error('수행평가 파일에서 "합계" 컬럼을 찾을 수 없습니다.');
+  }
+
+  // 데이터 읽기
+  const scores = {}; // {반: {번호: 합계점수}}
+  let detectedClass = null;
+  let maxStudent = 0;
+  let studentCount = 0;
+
+  for (let r = hdrRow + 1; r < aoa.length; r++) {
+    const row = aoa[r] || [];
+    const cell = row[noColIdx];
+    if (cell == null || cell === '') continue;
+
+    // "4/1" → cls=4, no=1 / 숫자 셀이면 건너뜀(합계 행 등)
+    const text = String(cell).trim();
+    const m = text.match(/^(\d+)\s*\/\s*(\d+)$/);
+    if (!m) {
+      // 응시생수/평균 등의 요약 행
+      if (/^(응시생수|총점|평균|합계|성취기준)/.test(text.replace(/\s+/g, ''))) break;
+      continue;
+    }
+    const cls = Number(m[1]);
+    const no = Number(m[2]);
+    if (detectedClass === null) detectedClass = cls;
+
+    // 합계 점수
+    const sum = row[sumColIdx];
+    if (sum == null || sum === '') continue;
+    const sumNum = Number(sum);
+    if (Number.isNaN(sumNum)) continue;
+
+    if (!scores[cls]) scores[cls] = {};
+    scores[cls][no] = sumNum;
+    if (no > maxStudent) maxStudent = no;
+    studentCount++;
+  }
+
+  if (studentCount === 0) {
+    throw new Error('수행평가 파일에서 학생 데이터를 찾을 수 없습니다.');
+  }
+
+  // 강의실(반) 번호 추출: 헤더 위쪽 행의 "... N학년  M" 에서 M(강의실 번호)
+  // A열의 "반/번호"는 학생의 홈룸 반이라 파일 구분에 쓸 수 없음(여러 반이 섞임)
+  let lectureGroup = null;
+  for (let i = 0; i < Math.min(hdrRow >= 0 ? hdrRow : aoa.length, 12); i++) {
+    const row = aoa[i] || [];
+    for (const v of row) {
+      if (v == null) continue;
+      const s = String(v);
+      if (s.indexOf('학년') === -1) continue;
+      const m = s.match(/학년\s+(\d+)/);          // "1학년   4" → 4
+      if (m) { lectureGroup = Number(m[1]); break; }
+      const toks = s.split(/\s+/).filter(t => /^\d+$/.test(t));
+      if (toks.length) { lectureGroup = Number(toks[toks.length - 1]); break; }
+    }
+    if (lectureGroup != null) break;
+  }
+
+  return {
+    scores,
+    classes: Object.keys(scores).map(Number).sort((a,b)=>a-b),
+    detectedClass,
+    lectureGroup,
+    maxStudent,
+    studentCount,
+  };
+}
+
+// ========================================
+// 파일 업로드 핸들러
+// ========================================
+async function handleExamFile(file) {
+  try {
+    const aoa = await readWorkbook(file);
+    const parsed = parseScoreFile(aoa);
+    state.examFile = {
+      name: file.name,
+      scores: parsed.scores,
+      classes: parsed.classes,
+      maxStudent: parsed.maxStudent,
+    };
+    renderFileList();
+    recalcAll();
+  } catch (err) {
+    alert('정기시험 파일을 읽지 못했습니다: ' + err.message);
+  }
+}
+
+async function handlePaFiles(files) {
+  for (const file of files) {
+    try {
+      const aoa = await readWorkbook(file);
+      const parsed = parsePerformanceFile(aoa);
+
+      // 파일 구분(중복 판정)은 강의실 번호 기준. 못 읽으면 파일명으로 구분.
+      const groupId = parsed.lectureGroup != null ? ('g' + parsed.lectureGroup) : ('n:' + file.name);
+      const existingIdx = state.paFiles.findIndex(f => f.groupId === groupId);
+      const newEntry = {
+        name: file.name,
+        groupId,
+        cls: parsed.lectureGroup,
+        scores: parsed.scores,
+        classes: parsed.classes,
+        maxStudent: parsed.maxStudent,
+        studentCount: parsed.studentCount,
+      };
+      if (existingIdx >= 0) {
+        state.paFiles[existingIdx] = newEntry;
+      } else {
+        state.paFiles.push(newEntry);
+      }
+    } catch (err) {
+      alert(`수행평가 파일 "${file.name}"을 읽지 못했습니다: ` + err.message);
+    }
+  }
+  // 반 번호 순으로 정렬
+  state.paFiles.sort((a, b) => (a.cls || 0) - (b.cls || 0));
+  renderFileList();
+  recalcAll();
+}
+
+function renderFileList() {
+  // 정기시험
+  const examList = document.getElementById('examList');
+  examList.innerHTML = '';
+  if (state.examFile) {
+    const studentCount = countStudents(state.examFile.scores);
+    examList.innerHTML = `
+      <div class="file-item">
+        <div class="info">
+          <div>📄 ${escapeHtml(state.examFile.name)}</div>
+          <div class="meta">${state.examFile.classes.length}개 반 · ${studentCount}명 응시</div>
+        </div>
+        <button class="del" data-action="del-exam">×</button>
+      </div>`;
+  }
+  // 수행평가
+  const paList = document.getElementById('paList');
+  paList.innerHTML = '';
+  state.paFiles.forEach((f, idx) => {
+    const studentCount = f.studentCount || countStudents(f.scores);
+    const clsTag = f.cls ? `<span class="cls-badge">${f.cls}반</span> ` : '';
+    const itemDiv = document.createElement('div');
+    itemDiv.className = 'file-item';
+    itemDiv.innerHTML = `
+      <div class="info">
+        <div>${clsTag}📄 ${escapeHtml(f.name)}</div>
+        <div class="meta">${studentCount}명 응시</div>
+      </div>
+      <button class="del" data-action="del-pa" data-idx="${idx}">×</button>`;
+    paList.appendChild(itemDiv);
+  });
+}
+
+function countStudents(scoresByClass) {
+  let total = 0;
+  Object.values(scoresByClass).forEach(cls => { total += Object.keys(cls).length; });
+  return total;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// 삭제 버튼
+document.addEventListener('click', (e) => {
+  const t = e.target;
+  if (!t.classList.contains('del')) return;
+  const act = t.getAttribute('data-action');
+  if (act === 'del-exam') {
+    state.examFile = null;
+    renderFileList();
+    recalcAll();
+  } else if (act === 'del-pa') {
+    const idx = Number(t.getAttribute('data-idx'));
+    state.paFiles.splice(idx, 1);
+    renderFileList();
+    recalcAll();
+  }
+});
+
+// 파일 input 이벤트
+document.getElementById('examInput').addEventListener('change', (e) => {
+  const f = e.target.files[0];
+  if (f) handleExamFile(f);
+  e.target.value = '';
+});
+document.getElementById('paInput').addEventListener('change', (e) => {
+  const fs = Array.from(e.target.files);
+  if (fs.length) handlePaFiles(fs);
+  e.target.value = '';
+});
+
+// 드래그앤드롭
+function setupDrop(elId, isExam) {
+  const el = document.getElementById(elId);
+  ['dragenter','dragover'].forEach(ev => el.addEventListener(ev, e => {
+    e.preventDefault(); e.stopPropagation(); el.classList.add('dragover');
+  }));
+  ['dragleave','drop'].forEach(ev => el.addEventListener(ev, e => {
+    e.preventDefault(); e.stopPropagation(); el.classList.remove('dragover');
+  }));
+  el.addEventListener('drop', (e) => {
+    const files = Array.from(e.dataTransfer.files).filter(f => /\.xlsx?$/i.test(f.name));
+    if (!files.length) return;
+    if (isExam) handleExamFile(files[0]);
+    else handlePaFiles(files);
+  });
+}
+setupDrop('examDrop', true);
+setupDrop('paDrop', false);
+
+// ========================================
+// 스프레드시트 셀 편집 (단일 셀 + 복붙)
+// ========================================
+let selectedCell = null;
+
+function selectCell(td) {
+  if (selectedCell) selectedCell.classList.remove('selected');
+  selectedCell = td;
+  if (td) td.classList.add('selected');
+}
+
+function startEdit(td) {
+  if (td.querySelector('input')) return;
+  const cur = td.textContent.trim();
+  const input = document.createElement('input');
+  input.className = 'cell-input';
+  input.type = 'text';
+  input.value = cur === '—' ? '' : cur;
+  td.textContent = '';
+  td.appendChild(input);
+  input.focus();
+  input.select();
+
+  const commit = (moveDir) => {
+    const v = input.value.trim();
+    td.removeChild(input);
+    applyCellValue(td, v);
+    if (moveDir) moveSelection(td, moveDir);
+  };
+
+  input.addEventListener('blur', () => commit(null));
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); commit('down'); }
+    else if (e.key === 'Tab') { e.preventDefault(); commit(e.shiftKey ? 'left' : 'right'); }
+    else if (e.key === 'Escape') {
+      td.removeChild(input);
+      writeCellDisplay(td);
+    }
+  });
+}
+
+function applyCellValue(td, rawVal) {
+  const grid = td.getAttribute('data-grid');
+  const r = Number(td.getAttribute('data-r'));
+  const c = Number(td.getAttribute('data-c'));
+  const num = Number(rawVal);
+  let valid = !Number.isNaN(num) && rawVal !== '';
+
+  if (grid === 'ratio') {
+    if (valid && num >= 0 && num <= 1) {
+      if (r === 0) state.ratio.r1 = num;
+      else state.ratio.r2 = num;
+    } else valid = false;
+  } else if (grid === 'exam') {
+    if (valid) state.cutoff_exam1[c] = num;
+    else valid = false;
+  } else if (grid === 'pa') {
+    if (valid) state.cutoff_pa[c] = num;
+    else valid = false;
+  } else if (grid === 'exam2') {
+    if (valid) state.cutoff_exam2[c] = num;
+    else valid = false;
+  }
+
+  td.classList.toggle('invalid', !valid);
+  writeCellDisplay(td);
+  recalcAll();
+}
+
+function writeCellDisplay(td) {
+  const grid = td.getAttribute('data-grid');
+  const r = Number(td.getAttribute('data-r'));
+  const c = Number(td.getAttribute('data-c'));
+  let v;
+  if (grid === 'ratio') v = r === 0 ? state.ratio.r1 : state.ratio.r2;
+  else if (grid === 'exam') v = state.cutoff_exam1[c];
+  else if (grid === 'pa') v = state.cutoff_pa[c];
+  else if (grid === 'exam2') v = state.cutoff_exam2[c];
+  td.textContent = formatNumber(v);
+}
+
+function formatNumber(n) {
+  if (n == null || Number.isNaN(n)) return '—';
+  if (Math.abs(n - Math.round(n)) < 1e-9) return String(Math.round(n));
+  return String(Number(n.toFixed(2)));
+}
+
+// 셀 클릭 → 선택, 더블클릭 또는 키 입력 → 편집
+document.addEventListener('click', (e) => {
+  const td = e.target.closest('td.editable');
+  if (td) {
+    selectCell(td);
+  } else if (!e.target.closest('.cell-input')) {
+    if (selectedCell) selectedCell.classList.remove('selected');
+    selectedCell = null;
+  }
+});
+document.addEventListener('dblclick', (e) => {
+  const td = e.target.closest('td.editable');
+  if (td) startEdit(td);
+});
+
+// 키보드 입력으로 바로 편집 시작
+document.addEventListener('keydown', (e) => {
+  if (!selectedCell) return;
+  if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
+
+  if (e.key === 'Enter' || e.key === 'F2') {
+    e.preventDefault();
+    startEdit(selectedCell);
+  } else if (e.key === 'Delete' || e.key === 'Backspace') {
+    e.preventDefault();
+    applyCellValue(selectedCell, '');
+  } else if (e.key.startsWith('Arrow')) {
+    e.preventDefault();
+    const dir = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' }[e.key];
+    moveSelection(selectedCell, dir);
+  } else if (e.key === 'Tab') {
+    e.preventDefault();
+    moveSelection(selectedCell, e.shiftKey ? 'left' : 'right');
+  } else if (e.ctrlKey || e.metaKey) {
+    // 복사/붙여넣기는 별도 핸들러에서
+  } else if (e.key.length === 1 && !e.altKey) {
+    // 일반 키 입력 → 편집 시작 후 값 대체
+    startEdit(selectedCell);
+    const inp = selectedCell.querySelector('input');
+    if (inp) { inp.value = e.key; }
+    e.preventDefault();
+  }
+});
+
+function moveSelection(td, dir) {
+  const grid = td.getAttribute('data-grid');
+  const r = Number(td.getAttribute('data-r'));
+  const c = Number(td.getAttribute('data-c'));
+  let nr = r, nc = c;
+  if (dir === 'up') nr--;
+  if (dir === 'down') nr++;
+  if (dir === 'left') nc--;
+  if (dir === 'right') nc++;
+  const next = document.querySelector(`td.editable[data-grid="${grid}"][data-r="${nr}"][data-c="${nc}"]`);
+  if (next) selectCell(next);
+}
+
+// 복사/붙여넣기
+document.addEventListener('paste', (e) => {
+  if (!selectedCell) return;
+  // 편집 중이면 그쪽에서 처리
+  if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
+  e.preventDefault();
+  const text = (e.clipboardData || window.clipboardData).getData('text');
+  if (!text) return;
+  const rows = text.replace(/\r/g, '').split('\n').filter(r => r.length > 0);
+  const grid = selectedCell.getAttribute('data-grid');
+  const startR = Number(selectedCell.getAttribute('data-r'));
+  const startC = Number(selectedCell.getAttribute('data-c'));
+  rows.forEach((rowText, dr) => {
+    const cells = rowText.split('\t');
+    cells.forEach((val, dc) => {
+      const td = document.querySelector(`td.editable[data-grid="${grid}"][data-r="${startR + dr}"][data-c="${startC + dc}"]`);
+      if (td) applyCellValue(td, val.trim());
+    });
+  });
+});
+
+document.addEventListener('copy', (e) => {
+  if (!selectedCell) return;
+  if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
+  e.preventDefault();
+  e.clipboardData.setData('text/plain', selectedCell.textContent.trim());
+});
+
+// nudge 버튼 (2차 분할점수 전체 ±N)
+document.querySelectorAll('.nudge').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const delta = Number(btn.getAttribute('data-nudge'));
+    for (let i = 0; i < 5; i++) {
+      state.cutoff_exam2[i] = Number((state.cutoff_exam2[i] + delta).toFixed(2));
+    }
+    // UI 갱신
+    document.querySelectorAll('td.editable[data-grid="exam2"]').forEach(td => writeCellDisplay(td));
+    recalcAll();
+  });
+});
+
+// ========================================
+// 계산
+// ========================================
+function recalcAll() {
+  // [2] 수행평가 비율 표시
+  const paRatio = 1 - state.ratio.r1 - state.ratio.r2;
+  const paRatioEl = document.getElementById('paRatioDisplay');
+  if (paRatio < 0 || paRatio > 1) {
+    paRatioEl.classList.add('warn');
+    paRatioEl.innerHTML = `수행평가 비율: <strong>${paRatio.toFixed(2)}</strong> ⚠ 비율이 잘못되었습니다`;
+  } else {
+    paRatioEl.classList.remove('warn');
+    paRatioEl.innerHTML = `수행평가 비율: <strong>${paRatio.toFixed(2)}</strong>`;
+  }
+
+  // [5] 학기말 추정 분할점수 = ROUND(B8*B2 + B13*B3 + B9)
+  const finalCutoffs = [];
+  for (let i = 0; i < 5; i++) {
+    const v = state.cutoff_exam1[i] * state.ratio.r1
+            + state.cutoff_exam2[i] * state.ratio.r2
+            + state.cutoff_pa[i];
+    const rounded = Math.round(v);
+    finalCutoffs.push(rounded);
+    document.getElementById('fc' + i).textContent = String(rounded);
+  }
+
+  // 학생별 학기말 추정 점수 계산 + 분포
+  let allFinalScores = [];      // [{cls, no, score, grade}]
+  let allExamScores = [];       // 정기시험 점수만 (히스토그램용)
+
+  if (state.examFile) {
+    const examScores = state.examFile.scores;
+    // 수행평가 합산: 같은 학생(cls, no)끼리 더하기
+    const paSum = {};  // {cls: {no: sum}}
+    state.paFiles.forEach(f => {
+      Object.entries(f.scores).forEach(([cls, students]) => {
+        if (!paSum[cls]) paSum[cls] = {};
+        Object.entries(students).forEach(([no, sc]) => {
+          paSum[cls][no] = (paSum[cls][no] || 0) + sc;
+        });
+      });
+    });
+
+    // 정기시험에 응시한 모든 학생을 기준으로
+    Object.entries(examScores).forEach(([cls, students]) => {
+      Object.entries(students).forEach(([no, examScore]) => {
+        allExamScores.push(examScore);
+        const paScore = (paSum[cls] && paSum[cls][no]) ? paSum[cls][no] : 0;
+        // 학기말 추정 점수 = 수행평가 점수 + 정기시험 점수 × (1차 비율 + 2차 비율)
+        // 1·2차 정기시험 동일 난이도 가정 → 1차 점수를 2차에도 동일하게 적용
+        // 수행평가 점수에는 비율을 곱하지 않음 (이미 만점 자체에 비율이 반영되어 있음)
+        const totalExamRatio = state.ratio.r1 + state.ratio.r2;
+        const final = Math.round(paScore + examScore * totalExamRatio);
+        allFinalScores.push({
+          cls: Number(cls),
+          no: Number(no),
+          examScore,
+          paScore,
+          finalScore: final,
+          grade: scoreToGrade(final, finalCutoffs),
+        });
+      });
+    });
+  }
+
+  // [6] 분포 계산
+  const counts = [0, 0, 0, 0, 0, 0]; // A, B, C, D, E, F(미달)
+  allFinalScores.forEach(s => {
+    counts[s.grade]++;
+  });
+  const total = allFinalScores.length;
+  const gradeKeys = ['A','B','C','D','E','F'];
+  gradeKeys.forEach((g, i) => {
+    document.getElementById('pct' + g).textContent = total > 0 ? ((counts[i] / total) * 100).toFixed(1) + '%' : '—';
+    document.getElementById('cnt' + g).textContent = counts[i] + '명';
+  });
+  // 누적 막대
+  const segs = document.querySelectorAll('#stackBar .seg');
+  segs.forEach((seg, i) => {
+    const c = counts[i];
+    seg.style.flex = c > 0 ? c : '0 0 0';
+    seg.textContent = c > 0 ? c : '';
+  });
+  document.getElementById('totalLine').textContent = '총 인원: ' + total + '명';
+
+  // [7] 히스토그램
+  drawHistogram(allExamScores);
+
+  // [8] 학생별 학기말 추정 점수표
+  drawDetailTable(allFinalScores);
+
+  // 최근 결과 보존(다운로드용) + 입력값 자동 저장
+  lastResult = { counts: counts.slice(), total, finalCutoffs: finalCutoffs.slice(), allFinalScores };
+  if (booted) saveSettings();
+}
+
+function scoreToGrade(score, cutoffs) {
+  // 0=A, 1=B, 2=C, 3=D, 4=E, 5=F(미달)
+  if (score >= cutoffs[0]) return 0;
+  if (score >= cutoffs[1]) return 1;
+  if (score >= cutoffs[2]) return 2;
+  if (score >= cutoffs[3]) return 3;
+  if (score >= cutoffs[4]) return 4;
+  return 5;
+}
+
+// ========================================
+// 히스토그램
+// ========================================
+// 평균/표준편차 수직선 표시 플러그인
+const statLinesPlugin = {
+  id: 'statLines',
+  afterDatasetsDraw(chart) {
+    const opts = chart.config.options.plugins.statLines;
+    if (!opts || opts.mean == null || !isFinite(opts.mean)) return;
+    const { ctx, chartArea, scales } = chart;
+    const xScale = scales.x;
+    if (!xScale) return;
+    const w = opts.binWidth;
+
+    // 점수 값 → 픽셀 좌표 (구간 중앙 = i*w + w/2)
+    const p0 = xScale.getPixelForValue(0);
+    const p1 = xScale.getPixelForValue(1);
+    const pxPer = p1 - p0;
+    const toPx = (v) => {
+      if (!isFinite(pxPer) || pxPer === 0) {
+        const vv = Math.max(0, Math.min(100, v));
+        return chartArea.left + (vv / 100) * (chartArea.right - chartArea.left);
+      }
+      return p0 + (v / w - 0.5) * pxPer;
+    };
+    const clampX = (px) => Math.max(chartArea.left, Math.min(chartArea.right, px));
+
+    const drawLine = (v, color, dash) => {
+      const px = clampX(toPx(v));
+      ctx.save();
+      ctx.beginPath();
+      ctx.setLineDash(dash);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = color;
+      ctx.moveTo(px, chartArea.top);
+      ctx.lineTo(px, chartArea.bottom);
+      ctx.stroke();
+      ctx.restore();
+      return px;
+    };
+    const drawLabel = (px, text, color, yOffset) => {
+      ctx.save();
+      ctx.font = 'bold 10px sans-serif';
+      ctx.textBaseline = 'top';
+      const tw = ctx.measureText(text).width;
+      let tx = px - tw / 2;
+      tx = Math.max(chartArea.left + 1, Math.min(chartArea.right - tw - 1, tx));
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.fillRect(tx - 3, chartArea.top + yOffset - 1, tw + 6, 13);
+      ctx.fillStyle = color;
+      ctx.fillText(text, tx, chartArea.top + yOffset);
+      ctx.restore();
+    };
+
+    const mean = opts.mean, sd = opts.sd;
+    // ±1 표준편차 (주황 점선)
+    if (sd > 0) {
+      const lo = mean - sd, hi = mean + sd;
+      if (lo >= 0) { const p = drawLine(lo, '#dd6b20', [5, 4]); drawLabel(p, '-1σ', '#dd6b20', 17); }
+      if (hi <= 100) { const p = drawLine(hi, '#dd6b20', [5, 4]); drawLabel(p, '+1σ', '#dd6b20', 17); }
+    }
+    // 평균 (빨강 실선)
+    const pm = drawLine(mean, '#e53e3e', []);
+    drawLabel(pm, '평균 ' + mean.toFixed(1), '#e53e3e', 2);
+  }
+};
+
+function drawHistogram(scores) {
+  const canvas = document.getElementById('histChart');
+  const emptyMsg = document.getElementById('histEmpty');
+  const statsEl = document.getElementById('histStats');
+
+  if (!scores || scores.length === 0) {
+    if (histChart) { histChart.destroy(); histChart = null; }
+    canvas.style.display = 'none';
+    emptyMsg.style.display = 'block';
+    if (statsEl) statsEl.style.display = 'none';
+    return;
+  }
+  canvas.style.display = 'block';
+  emptyMsg.style.display = 'none';
+
+  const w = state.binWidth;
+  const bins = [];
+  const labels = [];
+  for (let lo = 0; lo < 100; lo += w) {
+    const hi = Math.min(lo + w, 100);
+    labels.push(`${lo}-${hi === 100 ? 100 : (hi - (Number.isInteger(w) ? 0 : 0))}`);
+    // 마지막 구간만 100 포함
+    let count = 0;
+    scores.forEach(s => {
+      if (lo === Math.floor(100 / w) * w || hi >= 100) {
+        if (s >= lo && s <= 100) count++;
+      } else {
+        if (s >= lo && s < hi) count++;
+      }
+    });
+    bins.push(count);
+  }
+
+  // 더 정확한 카운트 (중복 방지)
+  const binsAccurate = new Array(Math.ceil(100 / w)).fill(0);
+  scores.forEach(s => {
+    let idx = Math.floor(s / w);
+    if (idx >= binsAccurate.length) idx = binsAccurate.length - 1;
+    if (idx < 0) idx = 0;
+    binsAccurate[idx]++;
+  });
+  const labelsAccurate = [];
+  for (let i = 0; i < binsAccurate.length; i++) {
+    const lo = i * w;
+    const hi = Math.min((i + 1) * w, 100);
+    labelsAccurate.push(`${lo}~${hi}`);
+  }
+
+  // 평균 / 표준편차(모표준편차) 계산
+  const nScores = scores.length;
+  const meanScore = scores.reduce((a, b) => a + b, 0) / nScores;
+  const sdScore = Math.sqrt(scores.reduce((a, b) => a + (b - meanScore) * (b - meanScore), 0) / nScores);
+  if (statsEl) {
+    statsEl.style.display = 'flex';
+    document.getElementById('statMean').textContent = meanScore.toFixed(2);
+    document.getElementById('statSd').textContent = sdScore.toFixed(2);
+    document.getElementById('statN').textContent = nScores + '명';
+  }
+
+  if (histChart) histChart.destroy();
+  histChart = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: labelsAccurate,
+      datasets: [{
+        label: '학생 수',
+        data: binsAccurate,
+        backgroundColor: '#2c5282',
+        borderColor: '#1e3a5f',
+        borderWidth: 1,
+        barPercentage: 1,
+        categoryPercentage: 0.95,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 200 },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: (items) => '점수 구간: ' + items[0].label,
+            label: (ctx) => ctx.parsed.y + '명',
+          }
+        },
+        statLines: { mean: meanScore, sd: sdScore, binWidth: w }
+      },
+      scales: {
+        x: {
+          title: { display: true, text: '점수 구간', font: { size: 11 } },
+          ticks: {
+            font: { size: 10 },
+            autoSkip: false,
+            maxRotation: 90,
+            minRotation: 45
+          }
+        },
+        y: { title: { display: true, text: '학생 수', font: { size: 11 } }, beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } } }
+      }
+    },
+    plugins: [statLinesPlugin]
+  });
+}
+
+// 슬라이더
+document.getElementById('binSlider').addEventListener('input', (e) => {
+  state.binWidth = Number(e.target.value);
+  document.getElementById('binVal').textContent = state.binWidth;
+  // 정기시험 점수 다시 모으기
+  if (state.examFile) {
+    const arr = [];
+    Object.values(state.examFile.scores).forEach(cls => {
+      Object.values(cls).forEach(v => arr.push(v));
+    });
+    drawHistogram(arr);
+  }
+});
+
+// ========================================
+// 학생별 상세표
+// ========================================
+function drawDetailTable(allFinalScores) {
+  const wrap = document.getElementById('detailWrap');
+  if (allFinalScores.length === 0) {
+    wrap.innerHTML = '<div class="empty-msg">파일을 업로드하면 표시됩니다.</div>';
+    return;
+  }
+  // 반×번호 표
+  const byClass = {};
+  let maxNo = 0;
+  allFinalScores.forEach(s => {
+    if (!byClass[s.cls]) byClass[s.cls] = {};
+    byClass[s.cls][s.no] = s;
+    if (s.no > maxNo) maxNo = s.no;
+  });
+  const classes = Object.keys(byClass).map(Number).sort((a,b)=>a-b);
+
+  const gradeClass = ['a','b','c','d','e','f'];
+  let html = '<table class="detail"><thead><tr><th>번호</th>';
+  classes.forEach(c => { html += `<th>${c}반</th>`; });
+  html += '</tr></thead><tbody>';
+  for (let no = 1; no <= maxNo; no++) {
+    html += `<tr><th>${no}</th>`;
+    classes.forEach(c => {
+      const s = byClass[c][no];
+      if (s) {
+        html += `<td class="${gradeClass[s.grade]}">${s.finalScore}</td>`;
+      } else {
+        html += `<td></td>`;
+      }
+    });
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+// ========================================
+// 초기 표시
+// ========================================
+// ========================================
+// 저장 / 다운로드  (A: 입력값 자동저장, C: 결과 엑셀 다운로드)
+// ========================================
+function updateSaveStatus(ts) {
+  const el = document.getElementById('saveStatus');
+  if (!el) return;
+  if (ts) {
+    const d = new Date(ts);
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    el.textContent = `\u{1F4BE} 입력값 자동 저장됨 \u00B7 마지막 저장 ${hh}:${mm}`;
+  } else {
+    el.textContent = '\u{1F4BE} 입력값이 이 브라우저에 자동 저장됩니다.';
+  }
+}
+
+function saveSettings() {
+  try {
+    const payload = {
+      ratio: state.ratio,
+      cutoff_exam1: state.cutoff_exam1,
+      cutoff_pa: state.cutoff_pa,
+      cutoff_exam2: state.cutoff_exam2,
+      binWidth: state.binWidth,
+      savedAt: Date.now(),
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    updateSaveStatus(payload.savedAt);
+  } catch (e) { /* 저장소 사용 불가 환경은 무시 */ }
+}
+
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const p = JSON.parse(raw);
+    if (p.ratio && typeof p.ratio.r1 === 'number' && typeof p.ratio.r2 === 'number') {
+      state.ratio = { r1: p.ratio.r1, r2: p.ratio.r2 };
+    }
+    if (Array.isArray(p.cutoff_exam1) && p.cutoff_exam1.length === state.cutoff_exam1.length) state.cutoff_exam1 = p.cutoff_exam1.slice();
+    if (Array.isArray(p.cutoff_pa) && p.cutoff_pa.length === state.cutoff_pa.length) state.cutoff_pa = p.cutoff_pa.slice();
+    if (Array.isArray(p.cutoff_exam2) && p.cutoff_exam2.length === state.cutoff_exam2.length) state.cutoff_exam2 = p.cutoff_exam2.slice();
+    if (typeof p.binWidth === 'number') state.binWidth = p.binWidth;
+    updateSaveStatus(p.savedAt);
+  } catch (e) { /* 손상된 저장 데이터 무시 */ }
+}
+
+// 결과 엑셀 다운로드
+const DL_GRADE_LABELS = ['A','B','C','D','E','미도달'];
+const DL_CUT_HEADERS = ['A/B','B/C','C/D','D/E','E/미도달'];
+document.getElementById('downloadBtn').addEventListener('click', () => {
+  if (!lastResult || !state.examFile || lastResult.total === 0) {
+    alert('먼저 정기시험\u00B7수행평가 파일을 업로드하여 결과가 계산된 뒤에 저장할 수 있습니다.');
+    return;
+  }
+  const { counts, total, finalCutoffs, allFinalScores } = lastResult;
+  const paRatio = Number((1 - state.ratio.r1 - state.ratio.r2).toFixed(2));
+
+  // 시트1: 분포 요약 + 설정값
+  const s = [];
+  s.push(['안양여고 평가관리부 · 학기말 성취도별 분포 비율 예측 (1학년)']);
+  s.push(['생성일시', new Date().toLocaleString('ko-KR')]);
+  s.push([]);
+  s.push(['[반영 비율]']);
+  s.push(['1차 정기시험', state.ratio.r1, '2차 정기시험', state.ratio.r2, '수행평가', paRatio]);
+  s.push([]);
+  s.push(['[성취수준별 추정 분할점수]']);
+  s.push(['', ...DL_CUT_HEADERS]);
+  s.push(['1차 정기시험', ...state.cutoff_exam1]);
+  s.push(['수행평가', ...state.cutoff_pa]);
+  s.push(['2차 정기시험(추정)', ...state.cutoff_exam2]);
+  s.push(['학기말(자동산출)', ...finalCutoffs]);
+  s.push([]);
+  s.push(['[최종 예상 성취도별 분포]']);
+  s.push(['등급', ...DL_GRADE_LABELS, '총원']);
+  s.push(['인원(명)', ...counts, total]);
+  s.push(['비율(%)', ...counts.map(c => total > 0 ? Number((c / total * 100).toFixed(1)) : 0), 100]);
+  const ws1 = XLSX.utils.aoa_to_sheet(s);
+
+  // 반\u00D7번호 정리
+  const byClass = {}; let maxNo = 0;
+  allFinalScores.forEach(it => {
+    if (!byClass[it.cls]) byClass[it.cls] = {};
+    byClass[it.cls][it.no] = it;
+    if (it.no > maxNo) maxNo = it.no;
+  });
+  const classes = Object.keys(byClass).map(Number).sort((a, b) => a - b);
+
+  // 시트2: 학생별 추정 점수
+  const d1 = [['번호', ...classes.map(c => c + '반')]];
+  for (let no = 1; no <= maxNo; no++) {
+    const row = [no];
+    classes.forEach(c => { const it = byClass[c][no]; row.push(it ? it.finalScore : ''); });
+    d1.push(row);
+  }
+  const ws2 = XLSX.utils.aoa_to_sheet(d1);
+
+  // 시트3: 학생별 예측 등급
+  const d2 = [['번호', ...classes.map(c => c + '반')]];
+  for (let no = 1; no <= maxNo; no++) {
+    const row = [no];
+    classes.forEach(c => { const it = byClass[c][no]; row.push(it ? DL_GRADE_LABELS[it.grade] : ''); });
+    d2.push(row);
+  }
+  const ws3 = XLSX.utils.aoa_to_sheet(d2);
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws1, '분포요약');
+  XLSX.utils.book_append_sheet(wb, ws2, '학생별추정점수');
+  XLSX.utils.book_append_sheet(wb, ws3, '학생별예측등급');
+  const n = new Date();
+  const stamp = `${n.getFullYear()}${String(n.getMonth() + 1).padStart(2, '0')}${String(n.getDate()).padStart(2, '0')}_${String(n.getHours()).padStart(2, '0')}${String(n.getMinutes()).padStart(2, '0')}`;
+  XLSX.writeFile(wb, `성취도분포예측_1학년_${stamp}.xlsx`);
+});
+
+// 입력값 기본값으로 초기화
+document.getElementById('resetBtn').addEventListener('click', () => {
+  if (!confirm('입력값(반영 비율\u00B7분할점수\u00B7계급폭)을 기본값으로 되돌립니다.\n업로드한 파일은 그대로 유지됩니다. 진행할까요?')) return;
+  state.ratio = { r1: DEFAULTS.ratio.r1, r2: DEFAULTS.ratio.r2 };
+  state.cutoff_exam1 = DEFAULTS.cutoff_exam1.slice();
+  state.cutoff_pa = DEFAULTS.cutoff_pa.slice();
+  state.cutoff_exam2 = DEFAULTS.cutoff_exam2.slice();
+  state.binWidth = DEFAULTS.binWidth;
+  const slider = document.getElementById('binSlider');
+  if (slider) { slider.value = state.binWidth; document.getElementById('binVal').textContent = state.binWidth; }
+  document.querySelectorAll('td.editable').forEach(td => writeCellDisplay(td));
+  recalcAll();
+});
+
+// ========================================
+// 초기 표시
+// ========================================
+function initDisplay() {
+  loadSettings();
+  const slider = document.getElementById('binSlider');
+  if (slider) { slider.value = state.binWidth; document.getElementById('binVal').textContent = state.binWidth; }
+  document.querySelectorAll('td.editable').forEach(td => writeCellDisplay(td));
+  recalcAll();
+  booted = true;
+}
+initDisplay();
+</script>
+</body>
+</html>
